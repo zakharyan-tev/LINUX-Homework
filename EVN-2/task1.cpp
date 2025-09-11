@@ -27,24 +27,22 @@ int main(int argc, char* argv[]) {
         cerr << "Использование: " << argv[0] << " a b c\n";
         return 1;
     }
-
+    
     int arr[3];
     for (int i = 0; i < 3; i++) {
+        size_t pos;
         try {
-            size_t pos;
             arr[i] = stoi(argv[i + 1], &pos);
-            if (pos != string(argv[i + 1]).size()) {
-                cerr << "Ошибка: '" << argv[i + 1] << "' не является числом\n";
-                return 1;
-            }
         } catch (...) {
             cerr << "Ошибка: '" << argv[i + 1] << "' не является числом\n";
             return 1;
         }
+        if (pos != string(argv[i + 1]).size()) {
+            cerr << "Ошибка: '" << argv[i + 1] << "' не является числом\n";
+            return 1;
+        }
     }
-
+    
     cout << "min-" << myMin(arr, 3) << ", max-" << myMax(arr, 3) << endl;
     return 0;
 }
-
-//решила вообще заново написать весь код))
