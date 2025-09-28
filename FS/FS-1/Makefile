@@ -1,17 +1,12 @@
-CXX = g++ 
-CXXFLAGS = -Wall -Wextra -std=c++17
-
+CX = g++
 TARGET = read-file
-SRC = read-file.cpp
-OBJ = $(SRC:.cpp=.o)
 
 all: $(TARGET)
+	 $(TARGET): read-file.o
+	 $(CX) -o $(TARGET) read-file.o
 
-$(TARGET): $(OBJ)
-	$(CXX) $(CXXFLAGS) $(OBJ) -o $(TARGET)
+read-file.o: read-file.cpp
+	$(CX) -c read-file.cpp
 
-%.o: %.cpp
-	$(CXX) $(CXXFLAGS) -c $< -o $@
-
-clean:
-	rm -f $(OBJ) $(TARGET)
+clean: 
+	rm -f $(TARGET) *.o
