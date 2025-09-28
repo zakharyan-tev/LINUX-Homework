@@ -1,10 +1,12 @@
-#include <iostream>
-#include <fstream>
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
 
-int main(int argc, char* argv[]) {
-    if (argc != 2) {
-        std::cerr << "Usage: " << argv[0] << " <file_path>" << std::endl;
-        return 1;
+int main(int argc, char** argv) {
+	if(argc != 2) {
+        perror("Wrong args");
+        exit(EXIT_FAILURE);
     }
 
     const char* filePath = argv[1];
