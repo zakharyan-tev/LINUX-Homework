@@ -1,35 +1,49 @@
-#include <iostream>
-#include <fstream>
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 int main(int argc, char* argv[]) {
     if (argc != 3) {
-        std::cerr << "Usage: " << argv[0] << " <source_file> <destination_file>" << std::endl;
-        return 1;
+        perror("Wrong arguments");
+        exit(EXIT_FAILURE);
     }
 
     const char* sourcePath = argv[1];
     const char* destPath   = argv[2];
 
-    std::ifstream src(sourcePath, std::ios::in | std::ios::binary);
-    if (!src) {
-        std::cerr << "Error: Cannot open source file " << sourcePath << std::endl;
-        return 1;
+    int src = open(sourcePath, O_RDONLY);
+    if (src == -1) {
+        perror("Error: Cannot open source file");
+        exit(EXIT_FAILURE);
     }
-  
-    std::ofstream dst(destPath, std::ios::out | std::ios::binary | std::ios::trunc);
-    if (!dst) {
-        std::cerr << "Error: Cannot open destination file " << destPath << std::endl;
-        return 1;
-    }
-  
-    const size_t bufferSize = 4096;
-    char buffer[bufferSize];
-    while (src.read(buffer, bufferSize) || src.gcount() > 0) {
-        dst.write(buffer, src.gcount());
+    int dst = open(destPath, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (dst == -1) {
+        perror("Error: Cannot open destination file");
+        close(src);
+        exit(EXIT_FAILURE);
     }
 
-    src.close();
-    dst.close();
+    const size_t bufferSize = 4096;
+    char buffer[bufferSize];
+    ssize_t bytesRead;
+
+    while ((bytesRead = read(src, buffer, bufferSize)) > 0) {
+        ssize_t bytesWritten = write(dst, buffer, bytesRead);
+        if (bytesWritten == -1) {
+            perror("Error writing to destination file");
+            close(src);
+            close(dst);
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    if (bytesRead == -1) {
+        perror("Error reading source file");
+    }
+
+    close(src);
+    close(dst);
 
     return 0;
 }
