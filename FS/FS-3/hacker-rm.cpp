@@ -1,75 +1,52 @@
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <cstdio>
-#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
 
-int main(int argc, char* argv[]) {
+int main(int argc, char** argv) {
     if (argc != 2) {
-        std::cerr << "Usage: " << argv[0] << " <file-to-erase>\n";
-        return 1;
+        perror("Wrong arguments");
+        exit(EXIT_FAILURE);
     }
 
-    const char* path = argv[1];
-
-    struct stat st;
-    if (stat(path, &st) != 0) {
-        std::cerr << "Error: cannot access file\n";
-        return 1;
-    }
-    if (!S_ISREG(st.st_mode)) {
-        std::cerr << "Error: not a regular file\n";
-        return 1;
+    int fd = open(argv[1], O_RDONLY);
+    if (fd == -1) {
+        perror("Error opening file");
+        exit(EXIT_FAILURE);
     }
 
-    std::ifstream in(path, std::ios::binary | std::ios::ate);
-    if (!in) {
-        std::cerr << "Error: cannot open file for reading\n";
-        return 1;
+    off_t file_size = lseek(fd, 0, SEEK_END);
+    if (file_size == -1) {
+        perror("Error getting file size");
+        close(fd);
+        exit(EXIT_FAILURE);
     }
-    std::streamsize size = in.tellg();
-    in.close();
+    close(fd);
 
-    if (size <= 0) {
-        if (std::remove(path) != 0) {
-            std::cerr << "Error: cannot remove file\n";
-            return 1;
-        }
-        return 0;
-    }
-  
-    std::ofstream out(path, std::ios::binary | std::ios::in);
-    if (!out) {
-        // пробуем открыть с trunc (если выше не получилось)
-        out.open(path, std::ios::binary | std::ios::trunc);
-        if (!out) {
-            std::cerr << "Error: cannot open file for writing\n";
-            return 1;
-        }
+    fd = open(argv[1], O_WRONLY);
+    if (fd == -1) {
+        perror("Error opening file for writing");
+        exit(EXIT_FAILURE);
     }
 
-    const std::size_t BUF = 4096;
-    std::vector<char> zeros(BUF, '\0');
+    const int BUF_SIZE = 4096;
+    char buffer[BUF_SIZE];
+    for (int i = 0; i < BUF_SIZE; i++) {
+        buffer[i] = '\0';
+    }
 
-    std::streamsize remaining = size;
+    off_t remaining = file_size;
     while (remaining > 0) {
-        std::streamsize to_write = (remaining > (std::streamsize)BUF) ? BUF : remaining;
-        out.write(zeros.data(), to_write);
-        if (!out) {
-            std::cerr << "Error: write failed\n";
-            out.close();
-            return 1;
+        ssize_t to_write = (remaining > BUF_SIZE) ? BUF_SIZE : remaining;
+        ssize_t written = write(fd, buffer, to_write);
+        if (written == -1) {
+            perror("Error writing to file");
+            close(fd);
+            exit(EXIT_FAILURE);
         }
-        remaining -= to_write;
+        remaining -= written;
     }
 
-    out.flush();
-    out.close();
-  
-    if (std::remove(path) != 0) {
-        std::cerr << "Error: cannot remove file after overwrite\n";
-        return 1;
-    }
-
+    close(fd);
     return 0;
 }
