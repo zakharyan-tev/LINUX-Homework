@@ -1,0 +1,9 @@
+CXX = g++
+TARGET = redirect-cin
+SRC = redirect-cin.cpp
+all: $(TARGET)
+	 $(TARGET): $(SRC)
+	 $(CXX) -o $(TARGET) $(SRC)
+
+clean:
+	 rm -f $(TARGET)
