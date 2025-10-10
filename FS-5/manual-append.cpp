@@ -1,46 +1,33 @@
 #include <iostream>
 #include <fcntl.h>
 #include <unistd.h>
-#include <cstdlib>
+#include <stdlib.h>
 
-int main(int argc, char** argv) {
-    if (argc != 2) {
-        std::cerr << "Usage: " << argv[0] << " <file>\n";
-        return EXIT_FAILURE;
+void check(bool arg, const char* msg) {
+    if (arg) {
+        perror(msg);
+        exit(EXIT_FAILURE);
     }
+}
 
-    int fd1 = open(argv[1], O_WRONLY | O_CREAT | O_TRUNC, 0644);
-    if (fd1 == -1) {
-        perror("open");
-        return EXIT_FAILURE;
-    }
+int main(int argc, char** argv)
+{
+    check(argc != 2, "Usage");
 
-    int fd2 = dup(fd1);
-    if (fd2 == -1) {
-        perror("dup");
-        close(fd1);
-        return EXIT_FAILURE;
-    }
+    int fd = open(argv[1], O_WRONLY | O_CREAT | O_TRUNC, 0664);
+    check(fd == -1, "open");
 
-    const char* line1 = "first line\n";
-    const char* line2 = "second line\n";
+    int fd2 = dup(fd);
+    check(fd2 == -1, "dup");
 
-    if (write(fd1, line1, 11) == -1) {
-        perror("write fd1");
-        close(fd1);
-        close(fd2);
-        return EXIT_FAILURE;
-    }
+    const char str[] = "first line\n";
+    const char str2[] = "second line\n";
 
-    if (write(fd2, line2, 12) == -1) {
-        perror("write fd2");
-        close(fd1);
-        close(fd2);
-        return EXIT_FAILURE;
-    }
+    check(write(fd, str, sizeof(str) - 1) == -1, "write fd");
+    check(write(fd2, str2, sizeof(str2) - 1) == -1, "write fd2");
 
-    close(fd1);
+    close(fd);
     close(fd2);
 
-    return EXIT_SUCCESS;
+    return 0;
 }
